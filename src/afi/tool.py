@@ -1,25 +1,9 @@
 import inspect
 from typing import get_type_hints
 from functools import wraps
-from afi.json_schema import make_tool_def
-
-tool_funcs = {}
 
 
-def call_tool(name: str, input: dict):
-    output = tool_funcs[name](**input)
-    return str(output)
-
-
-def get_claude_tool_defs():
-    tool_defs = []
-    for func in tool_funcs.values():
-        tool_def = make_tool_def(func)
-        tool_defs.append(tool_def)
-    return tool_defs
-
-
-def tool(func):
+def wrap_tool(func):
     """
     Wraps a regular Python function and adds it to the tool registry,
     allowing an agent started from this process to call it.
@@ -47,5 +31,4 @@ def tool(func):
 
         return func(*args, **kwargs)
 
-    tool_funcs[func.__name__] = wrapper
     return wrapper

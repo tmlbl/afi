@@ -1,9 +1,4 @@
-from afi.claude import run_agent_claude
-from afi.tool import tool
+from afi.agent import Agent
 
 
-def main(prompt: str):
-    run_agent_claude(prompt=prompt)
-
-
-__all__ = ["tool", "main"]
+__all__ = ["Agent"]
