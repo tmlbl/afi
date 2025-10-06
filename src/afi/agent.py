@@ -105,9 +105,10 @@ class Agent:
                 break
 
             # add tool results to conversation
-            messages.append(
-                MessageParam(
-                    role="user",
-                    content=tool_results,
+            if len(tool_results) > 0:
+                messages.append(
+                    MessageParam(
+                        role="user",
+                        content=tool_results,
+                    )
                 )
-            )
