@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "afi"
+description = "Agent Functional Interface"
+version = "0.0.1"
+dependencies = [
+  "anthropic>=0.69.0",
+]
+requires-python = ">3.12"
+authors = [
+  { name = "Tim Lebel" },
+]
+license = "MIT"
+keywords = ["AI", "agents", "Claude", "Gemini"]
+
+[project.scripts]
+afi = "afi.cli:main"
