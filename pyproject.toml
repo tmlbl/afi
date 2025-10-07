@@ -8,6 +8,8 @@ description = "Agent Functional Interface"
 version = "0.0.1"
 dependencies = [
   "anthropic>=0.69.0",
+  "click>=8.3.0",
+  "rich>=0.14",
 ]
 requires-python = ">3.12"
 authors = [
@@ -15,6 +17,3 @@ authors = [
 ]
 license = "MIT"
 keywords = ["AI", "agents", "Claude", "Gemini"]
-
-[project.scripts]
-afi = "afi.cli:main"

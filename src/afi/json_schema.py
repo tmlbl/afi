@@ -2,6 +2,8 @@ import inspect
 import typing
 from typing import get_origin, get_args, Annotated
 
+from afi.tool import Tool
+
 type_map: list[tuple[type, str]] = [
     (str, "string"),
     (int, "integer"),
@@ -45,19 +47,13 @@ def py_type_to_json(py_type):
     )
 
 
-def make_tool_def(func):
-    """
-    Convert a function signature to a Claude/MCP-style JSON schema definition
-    """
-
-    sig = inspect.signature(func)
-
-    tool = {
-        "name": func.__name__,
+def make_tool_def(tool: Tool) -> dict:
+    tool_def: dict = {
+        "name": tool.name,
     }
 
-    if func.__doc__:
-        tool["description"] = func.__doc__
+    if tool.description:
+        tool_def["description"] = tool.description
 
     input_schema = {
         "type": "object",
@@ -65,26 +61,22 @@ def make_tool_def(func):
         "required": [],
     }
 
-    for name, param in sig.parameters.items():
-        if param.annotation == inspect.Parameter.empty:
-            raise ValueError(f"Parameter {name} must have a type annotation")
-
+    for param in tool.params:
         prop = {
-            "type": py_type_to_json(param.annotation),
+            "type": py_type_to_json(param.type),
         }
 
-        if get_origin(param.annotation) is Annotated:
-            # TODO: validate the shape of Annotated is what we expect
-            prop["description"] = param.annotation.__metadata__[0]
+        if param.description:
+            prop["description"] = param.description
 
-        if param.default is param.empty:
-            input_schema["required"].append(name)
+        if param.required:
+            input_schema["required"].append(param.name)
 
-        input_schema["properties"][name] = prop
+        input_schema["properties"][param.name] = prop
 
     if len(input_schema["required"]) == 0:
         del input_schema["required"]
 
-    tool["input_schema"] = input_schema
+    tool_def["input_schema"] = input_schema
 
-    return tool
+    return tool_def

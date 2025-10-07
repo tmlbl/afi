@@ -5,11 +5,13 @@ from anthropic.types import MessageParam, ToolResultBlockParam
 
 
 from afi.json_schema import make_tool_def
-from afi.tool import wrap_tool
-from afi.ui import log_model_response, log_tool_use
+from afi.tool import Tool
+from afi.ui import Logger
 
 
 class Agent:
+    tools: dict[str, Tool]
+
     def __init__(
         self,
         default_prompt: str,
@@ -27,20 +29,20 @@ class Agent:
                     f"duplicate entries for tool name: {tool.__name__}",
                 )
 
-            self.tools[tool.__name__] = wrap_tool(tool)
+            self.tools[tool.__name__] = Tool(tool)
 
-        print(self.get_tools_json_schema())
+        self.log = Logger()
 
     def get_tools_json_schema(self):
         schema = []
-        for func in self.tools.values():
-            schema.append(make_tool_def(func))
+        for tool in self.tools.values():
+            schema.append(make_tool_def(tool))
         return schema
 
     def call_tool(self, name: str, input: dict):
         if name not in self.tools:
             raise ValueError(f"No tool registered with name: {name}")
-        output = self.tools[name](**input)
+        output = self.tools[name].func(**input)
         return str(output)
 
     def run(self) -> None:
@@ -71,14 +73,14 @@ class Agent:
 
             for block in response.content:
                 if block.type == "text":
-                    log_model_response(block.text)
+                    self.log.log_model_response(block.text)
                 elif block.type == "tool_use":
                     input = (
                         block.input
                         if type(block.input) is dict
                         else block.input.__dict__
                     )
-                    log_tool_use(block.name, input)
+                    self.log.log_tool_use(block.name, input)
                     try:
                         tool_output = self.call_tool(block.name, input)
                         tool_results.append(
@@ -88,7 +90,7 @@ class Agent:
                                 content=tool_output,
                             )
                         )
-                        print("tool result:", tool_output)
+                        self.log.log_tool_output(tool_output)
                     except Exception as e:
                         tool_results.append(
                             ToolResultBlockParam(
@@ -98,7 +100,7 @@ class Agent:
                                 is_error=True,
                             )
                         )
-                        print("tool invoke error:", e)
+                        self.log.log_error(f"invoking {block.name}", e)
 
             # check if done for prompt
             if response.stop_reason == "end_turn":
