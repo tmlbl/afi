@@ -4,7 +4,7 @@ import click
 from afi.agent import Agent
 
 
-def main(agent: Agent, run: Callable[[Agent]] | None = None):
+def main(agent: Agent, run: Callable[[Agent], None] | None = None):
     tool_group = click.Group(name="tool")
 
     for tool in agent.tools.values():
@@ -12,7 +12,10 @@ def main(agent: Agent, run: Callable[[Agent]] | None = None):
 
     def root_callback(ctx: click.Context):
         if ctx.invoked_subcommand is None:
-            agent.run()
+            if run is not None:
+                run(agent)
+            else:
+                agent.run()
 
     root = click.Group(
         callback=click.pass_context(root_callback),

@@ -6,22 +6,29 @@ from anthropic.types import MessageParam, ToolResultBlockParam
 
 from afi.json_schema import make_tool_def
 from afi.tool import Tool
+from afi.config import Config
 from afi.ui import Logger
 
 
 class Agent:
+    prompt: str
+    system_prompt: str
+    config: Config
     tools: dict[str, Tool]
 
     def __init__(
         self,
-        default_prompt: str,
-        default_system_prompt: str = "",
+        prompt: str = "",
+        system_prompt: str = "",
         tools: list[Callable] = [],
     ) -> None:
-        self.prompt = default_prompt
-        self.system_prompt = default_system_prompt
+        self.prompt = prompt
+        self.system_prompt = system_prompt
         self.tools = {}
-        self.model_name = "claude-sonnet-4-5-20250929"
+
+        self.config = Config(
+            model_name="claude-sonnet-4-5-20250929",
+        )
 
         for tool in tools:
             if tool.__name__ in self.tools:
@@ -31,7 +38,7 @@ class Agent:
 
             self.tools[tool.__name__] = Tool(tool)
 
-        self.log = Logger()
+        self.log = Logger(self.config)
 
     def get_tools_json_schema(self):
         schema = []
@@ -45,7 +52,9 @@ class Agent:
         output = self.tools[name].func(**input)
         return str(output)
 
-    def run(self) -> None:
+    def run(self, prompt: str | None = None) -> None:
+        if prompt is not None:
+            self.prompt = prompt
         self.run_agent_claude()
 
     def run_agent_claude(self):
@@ -55,10 +64,11 @@ class Agent:
 
         while True:
             response = client.messages.create(
-                model=self.model_name,
+                model=self.config.model_name,
                 max_tokens=1024,
                 tools=self.get_tools_json_schema(),
                 messages=messages,
+                system=self.system_prompt,
             )
             # TODO: handle errors like anthropic._exceptions.OverloadedError: Error code: 529
 
