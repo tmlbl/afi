@@ -7,7 +7,7 @@ from anthropic.types import MessageParam, ToolResultBlockParam
 from afi.json_schema import make_tool_def
 from afi.tool import Tool
 from afi.config import Config
-from afi.ui import Logger
+from afi.ui import Logger, prompt_user
 
 
 class Agent:
@@ -27,7 +27,7 @@ class Agent:
         self.tools = {}
 
         self.config = Config(
-            model_name="claude-sonnet-4-5-20250929",
+            model_name="claude-sonnet-4-5",
         )
 
         for tool in tools:
@@ -52,15 +52,21 @@ class Agent:
         output = self.tools[name].func(**input)
         return str(output)
 
-    def run(self, prompt: str | None = None) -> None:
+    def run(self, prompt: str | None = None, interactive: bool = False) -> None:
         if prompt is not None:
             self.prompt = prompt
-        self.run_agent_claude()
+        self.run_agent_claude(interactive=interactive)
 
-    def run_agent_claude(self):
+    def run_agent_claude(
+        self, interactive: bool = False, messages: list[MessageParam] = []
+    ):
         client = Anthropic()
 
-        messages = [MessageParam(role="user", content=self.prompt)]
+        if not interactive:
+            messages.append(MessageParam(role="user", content=self.prompt))
+        else:
+            content = prompt_user()
+            messages.append(MessageParam(role="user", content=content))
 
         while True:
             response = client.messages.create(
@@ -125,3 +131,6 @@ class Agent:
                         content=tool_results,
                     )
                 )
+
+        if interactive:
+            self.run_agent_claude(interactive=True, messages=messages)

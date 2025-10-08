@@ -2,6 +2,7 @@ import json
 from typing import Any
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.prompt import Prompt
 
 from afi.config import Config
 
@@ -74,3 +75,7 @@ class Logger:
             )
 
         console.print(f"[bold red]ERROR[/bold red] {message} [red]{err}")
+
+
+def prompt_user():
+    return Prompt.ask("[bold green]➜[/bold green] ")
