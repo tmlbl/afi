@@ -60,6 +60,7 @@ class Agent:
                 tools=self.get_tools_json_schema(),
                 messages=messages,
             )
+            # TODO: handle errors like anthropic._exceptions.OverloadedError: Error code: 529
 
             # add assistant response to conversation
             messages.append(

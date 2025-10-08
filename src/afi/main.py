@@ -1,9 +1,10 @@
+from typing import Callable
 import click
 
 from afi.agent import Agent
 
 
-def main(agent: Agent):
+def main(agent: Agent, run: Callable[[Agent]] | None = None):
     tool_group = click.Group(name="tool")
 
     for tool in agent.tools.values():
