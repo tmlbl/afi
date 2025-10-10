@@ -3,6 +3,7 @@ import inspect
 from typing import Annotated, Any, Callable, get_origin, get_type_hints
 from functools import wraps
 
+from afi.util import unwrap_optional
 import click
 
 from afi.ui import Logger
@@ -24,22 +25,29 @@ class ToolParam:
         self.type = param.annotation
 
         self.description = None
-        if get_origin(param) is Annotated:
-            self.description = param.annotation.__metadata__[1]
+        if get_origin(param.annotation) is Annotated:
+            self.description = param.annotation.__metadata__[0]
 
         self.required = param.default is param.empty
 
     def option(self) -> click.Option:
-        return click.Option([f"--{self.name}"], type=self.type, required=self.required)
+        return click.Option(
+            [f"--{self.name.replace('_', '-')}"],
+            type=unwrap_optional(self.type),
+            required=self.required,
+            help=self.description,
+        )
 
 
 class Tool:
+    log: Logger
     name: str
     description: str | None
     command: click.Command
     params: list[ToolParam]
 
-    def __init__(self, func: Callable) -> None:
+    def __init__(self, func: Callable, log: Logger) -> None:
+        self.log = log
         self.func = wrap_tool(func)
         self.name = func.__name__
         self.description = func.__doc__
@@ -65,13 +73,12 @@ class Tool:
             return str(result)
 
     def call_cmd(self, **kwargs):
-        log = Logger(print_tool_outputs=True)
         try:
-            log.log_tool_use(self.name, kwargs)
+            self.log.log_tool_use(self.name, kwargs)
             output = self.call(**kwargs)
-            log.log_tool_output(output)
+            self.log.log_tool_output(output, full=True)
         except Exception as e:
-            print(f"error: {str(e)}")
+            self.log.log_error(f"calling {self.name}", e)
 
 
 def wrap_tool(func):

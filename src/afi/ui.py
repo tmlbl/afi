@@ -49,21 +49,23 @@ class Logger:
                     value = f'"{value}"'
                 params.append(f"[bold]{key}[/bold]={value}")
             params_str = " ".join(params)
-            console.print(f"[bold red]TOOL[/bold red] {name} {params_str}")
+            console.print(f"[bold yellow]CALL TOOL[/bold yellow] {name} {params_str}")
 
-    def log_tool_output(self, output: Any):
+    def log_tool_output(self, output: Any, full: bool = False):
         if self.config.log_json:
             return self.log_json(
                 type="tool_result",
                 output=output[:256],
                 output_size=len(output),
             )
-        if self.print_tool_outputs:
-            console.print(f"[bold red]OUTPUT[/bold red] [dim]{output}[/dim]")
+        if full:
+            console.print(f"[bold green]SUCCESS[/bold green]\n[dim]{output}[/dim]")
         else:
             truncated = output[:256]
             console.print(
-                f"[bold red]OUTPUT[/bold red] [dim]{truncated}[/dim] ...{len(output)} characters"
+                f"[bold green]SUCCESS[/bold green]\n[dim]{truncated}[/dim] ...{
+                    len(output)
+                } characters"
             )
 
     def log_error(self, message: str, err: Exception):

@@ -30,15 +30,15 @@ class Agent:
             model_name="claude-sonnet-4-5",
         )
 
+        self.log = Logger(self.config)
+
         for tool in tools:
             if tool.__name__ in self.tools:
                 raise ValueError(
                     f"duplicate entries for tool name: {tool.__name__}",
                 )
 
-            self.tools[tool.__name__] = Tool(tool)
-
-        self.log = Logger(self.config)
+            self.tools[tool.__name__] = Tool(tool, self.log)
 
     def get_tools_json_schema(self):
         schema = []
